@@ -455,7 +455,10 @@ function pXY(ctx, bbox) {
 				var getNext = nextXY instanceof Array ? function() {return [this.x + nextXY[0], this.y + nextXY[1]];} : nextXY;
 
 				// publish scan start event
-				this.subs.length && this.pub({type: 1, pxy: this});
+				if (this.subs.length) {
+					var scanId = rand(10000,99999);
+					this.pub({type: 1, id: scanId, pxy: this});
+				}
 
 				// move, get pixels, check tolers, run callback
 				var next, fnChk = true, stepCnt = 0;
@@ -465,7 +468,7 @@ function pXY(ctx, bbox) {
 				} while (fnChk !== false && next && this.moveTo(next[0], next[1]).ok);
 
 				// publish scan end event
-				this.subs.length && this.pub({type: 2, pxy: this});
+				this.subs.length && this.pub({type: 2, id: scanId, pxy: this});
 
 				return this;
 			},
