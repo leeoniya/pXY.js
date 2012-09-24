@@ -428,7 +428,7 @@ function pXY(ctx, bbox) {
 
 			// relative
 			moveBy: function moveBy(stepX, stepY, updPx, noPub) {
-				return this.moveTo(this.x + stepX, this.y + stepY, !(updPx === false));
+				return this.moveTo(this.x + stepX, this.y + stepY, !(updPx === false), noPub || false);
 			},
 		},
 
