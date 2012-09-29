@@ -122,6 +122,12 @@ function pxTrcr(w, h, ctnr) {
 
 				return this;
 			},
+			recOff: function rec() {
+				this.record = false;
+				this.queue = null;
+
+				return this;
+			},
 			// queues or executes functions
 			exec: function exec(fn, args, timeout) {
 				if (!this.record)
