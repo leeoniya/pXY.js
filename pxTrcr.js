@@ -119,6 +119,8 @@ function pxTrcr(w, h, ctnr) {
 			rec: function rec() {
 				this.record = true;
 				this.queue = new q;
+
+				return this;
 			},
 			// queues or executes functions
 			exec: function exec(fn, args, timeout) {
@@ -204,6 +206,8 @@ function pxTrcr(w, h, ctnr) {
 					for (var i in this.lyrs)
 						this.lyrs[i].clr();
 				}
+
+				return this;
 			},
 			// draw pixel to layer at idx
 			setPx: function setPx(i) {
@@ -216,6 +220,8 @@ function pxTrcr(w, h, ctnr) {
 					if (lyrId && i !== lyrId) continue;
 					this.lyrs[i].upd();
 				}
+
+				return this;
 			},
 			// returns array with layer canvas(es)
 			cans: function get(lyrId) {
