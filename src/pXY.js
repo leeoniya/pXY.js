@@ -169,20 +169,27 @@ function pXY(ctx, bbox) {
 		this.a = a;
 
 		this._hsv = null;
-
-		this._hue = null;
-		this._sat = null;
 		this._lum = null;
 	}
 
+		px.prototype.hsv = function hsv() {
+			if (!this._hsv) {
+				var rgb = rgba2rgb({r: this.r, g: this.g, b: this.b, a: this.a}, {r: 255, g: 255, b: 255});
+				this._hsv = rgb2hsv(rgb.r, rgb.g, rgb.b);
+			}
+			return this._hsv;
+		};
+
 		px.prototype.hue = function hue() {
-			// calc here
-			return this._hue;
+			if (!this._hsv)
+				this.hsv();
+			return this._hsv[0];
 		};
 
 		px.prototype.sat = function sat() {
-			// calc here
-			return this._sat;
+			if (!this._hsv)
+				this.hsv();
+			return this._hsv[1];
 		};
 
 		px.prototype.lum = function lum() {
