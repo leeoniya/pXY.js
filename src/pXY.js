@@ -6,31 +6,52 @@
 */
 
 function pXY(ctx, bbox) {
-	// another pXY instance, ImageData, <canvas>, <img>...*NOT* a 2d context
-	this.ctx = ctx;
+	this.ctx = null;		// ImageData or parent pXY, *NOT* a 2d context
+	this.pxls = null;		// px array
 
-	// px array
-	this.pxls = null;
-
-	if (ctx.data && ctx.constructor.toString().indexOf("ImageData")) {
-		ctx.lft = 0;
-		ctx.top = 0;
-		ctx.w = ctx.width;
-		ctx.h = ctx.height;
-		this.pxls = ctx.data;
-	}
-	else if (ctx.constructor.name == "pXY") {
+	// pXY
+	if (ctx instanceof pXY) {
+		this.ctx = ctx;
 		this.pxls = ctx.pxls;
 	}
 	else {
-		// throw?
+		// <img>
+		if (ctx instanceof HTMLImageElement) {
+			var can		= document.createElement("canvas");
+			can.width	= ctx.width;
+			can.height	= ctx.height;
+
+			var ctx2d = can.getContext("2d");
+			ctx2d.drawImage(ctx, 0, 0);
+
+			// replace original image w/canvas
+			ctx.parentNode.replaceChild(can, ctx);
+
+			this.ctx = ctx2d.getImageData(0, 0, ctx.width, ctx.height);
+		}
+		// <canvas>
+		else if (ctx instanceof HTMLCanvasElement) {
+			var ctx2d = ctx.getContext("2d");
+			this.ctx = ctx2d.getImageData(0, 0, ctx.width, ctx.height);
+		}
+		// ImageData
+		else if (ctx instanceof ImageData) {
+			this.ctx = ctx;
+		}
+
+		this.ctx.lft = 0;
+		this.ctx.top = 0;
+		this.ctx.w = ctx.width;
+		this.ctx.h = ctx.height;
+
+		this.pxls = this.ctx.data;
 	}
 
 	// bbox
 	this.lft = bbox ? bbox.lft : 0;
 	this.top = bbox ? bbox.top : 0;
-	this.rgt = bbox ? bbox.rgt : ctx.w - 1;
-	this.btm = bbox ? bbox.btm : ctx.h - 1;
+	this.rgt = bbox ? bbox.rgt : this.ctx.w - 1;
+	this.btm = bbox ? bbox.btm : this.ctx.h - 1;
 	this.w = this.rgt - this.lft + 1;
 	this.h = this.btm - this.top + 1;
 
