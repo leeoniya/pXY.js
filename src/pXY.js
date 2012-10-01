@@ -263,7 +263,7 @@ function pXY(ctx, bbox) {
 		return [hue, sat, max];
 	}
 
-
+	// http://alienryderflex.com/hsp.html
 	function rgb2hsp(r, g, b) {
 		var hsv = rgb2hsv(r, g, b);
 
