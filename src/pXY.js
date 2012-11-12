@@ -15,28 +15,31 @@ function pXY(ctx, bbox) {
 		this.pxls = ctx.pxls;
 	}
 	else {
-		// <img>
-		if (ctx instanceof HTMLImageElement) {
-			var can		= document.createElement("canvas");
-			can.width	= ctx.width;
-			can.height	= ctx.height;
+		// web workers have no access to DOM prototypes for instanceof to work
+		switch (ctx.__proto__.constructor.name) {
+			// <img>
+			case "HTMLImageElement":
+				var can		= document.createElement("canvas");
+				can.width	= ctx.width;
+				can.height	= ctx.height;
 
-			var ctx2d = can.getContext("2d");
-			ctx2d.drawImage(ctx, 0, 0);
+				var ctx2d = can.getContext("2d");
+				ctx2d.drawImage(ctx, 0, 0);
 
-			// replace original image w/canvas
-			ctx.parentNode.replaceChild(can, ctx);
+				// replace original image w/canvas
+				ctx.parentNode.replaceChild(can, ctx);
 
-			this.ctx = ctx2d.getImageData(0, 0, ctx.width, ctx.height);
-		}
-		// <canvas>
-		else if (ctx instanceof HTMLCanvasElement) {
-			var ctx2d = ctx.getContext("2d");
-			this.ctx = ctx2d.getImageData(0, 0, ctx.width, ctx.height);
-		}
-		// ImageData
-		else if (ctx instanceof ImageData) {
-			this.ctx = ctx;
+				this.ctx = ctx2d.getImageData(0, 0, ctx.width, ctx.height);
+				break;
+			// <canvas>
+			case "HTMLCanvasElement":
+				var ctx2d = ctx.getContext("2d");
+				this.ctx = ctx2d.getImageData(0, 0, ctx.width, ctx.height);
+				break;
+			// ImageData
+			case "ImageData":
+				this.ctx = ctx;
+				break;
 		}
 
 		this.ctx.lft = 0;
