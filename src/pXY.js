@@ -7,6 +7,7 @@
 
 function pXY(ctx, bbox) {
 	this.ctx = null;		// ImageData or parent pXY, *NOT* a 2d context
+	this.can = null;
 	this.pxls = null;		// px array
 
 	// pXY
@@ -23,6 +24,7 @@ function pXY(ctx, bbox) {
 				var can		= document.createElement("canvas");
 				can.width	= ctx.width;
 				can.height	= ctx.height;
+				this.can	= can;
 
 				var ctx2d = can.getContext("2d");
 				ctx2d.drawImage(ctx, 0, 0);
@@ -34,8 +36,9 @@ function pXY(ctx, bbox) {
 				break;
 			// <canvas>
 			case "HTMLCanvasElement":
-				var ctx2d = ctx.getContext("2d");
-				this.ctx = ctx2d.getImageData(0, 0, ctx.width, ctx.height);
+				this.can	= ctx;
+				var ctx2d	= ctx.getContext("2d");
+				this.ctx	= ctx2d.getImageData(0, 0, ctx.width, ctx.height);
 				break;
 			// ImageData
 			case "ImageData":
@@ -99,6 +102,7 @@ function pXY(ctx, bbox) {
 			// create a pXY instance from ImageData
 			imgd = ctx.getImageData(0, 0, img.width, img.height);
 			pxy = new pXY(imgd);
+			pxy.can = can;
 
 			fn.call(pxy, can, ctx, img, imgd);
 		};
