@@ -16,7 +16,8 @@ function pXY(ctx, bbox) {
 	}
 	else {
 		// web workers have no access to DOM prototypes for instanceof to work
-		switch (ctx.__proto__.constructor.name) {
+		var type = Object.prototype.toString.call(ctx).match(/^\[object (.*)\]$/)[1];
+		switch (type) {
 			// <img>
 			case "HTMLImageElement":
 				var can		= document.createElement("canvas");
