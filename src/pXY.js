@@ -44,6 +44,16 @@ function pXY(ctx, bbox) {
 			case "ImageData":
 				this.ctx = ctx;
 				break;
+			// grayscale px array
+			case "Array":
+			case "Uint8Array":
+			case "Uint8ClampedArray":
+				this.ctx = {
+					data: ctx,
+					width: bbox.w,
+					height: bbox.h,
+				};
+				break;
 		}
 
 		this.ctx.lft = 0;
@@ -75,6 +85,9 @@ function pXY(ctx, bbox) {
 	this.g = null;
 	this.b = null;
 	this.a = null;
+	// grayscale value
+	this.v = null;
+	this.gray = false;
 
 	// event subscriber registry
 	this.subs = [
@@ -205,6 +218,27 @@ function pXY(ctx, bbox) {
 				this._lum = rgbaLumOnRgb({r: this.r, g: this.g, b: this.b, a: this.a}, {r: 255, g: 255, b: 255});
 			return this._lum;
 		};
+
+	function pxGray(v) {
+		this.r = null;
+		this.g = null;
+		this.b = null;
+		this.a = 255;
+
+		this.v = v;
+	}
+
+		function nullRet() {
+			return null;
+		}
+
+		pxGray.prototype.hsv = nullRet;
+
+		pxGray.prototype.hue = nullRet;
+
+		pxGray.prototype.sat = nullRet;
+
+		pxGray.prototype.lum = nullRet;
 
 	// rgba px lum against rgb bg
 	function rgbaLumOnRgb(fg, bg) {
@@ -382,9 +416,9 @@ function pXY(ctx, bbox) {
 				if (this._px && x == this.x && y == this.y)
 					return this._px;
 
-				var i = this.absIdx(x, y) * 4;
+				var i = this.absIdx(x, y);
 
-				return new px(this.pxls[i], this.pxls[i+1], this.pxls[i+2], this.pxls[i+3]);
+				return this.gray ? new pxGray(this.pxls[i]) : new px(this.pxls[i*=4], this.pxls[++i], this.pxls[++i], this.pxls[++i]);
 			},
 
 			// sync px under position
@@ -392,10 +426,62 @@ function pXY(ctx, bbox) {
 				var px = this.px();
 
 				this._px	= px;
-				this.r		= px.r;
-				this.g		= px.g;
-				this.b		= px.b;
-				this.a		= px.a;
+
+				if (this.gray)
+					this.v		= px.v;
+				else {
+					this.r		= px.r;
+					this.g		= px.g;
+					this.b		= px.b;
+					this.a		= px.a;
+				}
+			},
+
+			// convert full canvas to grayscale
+			toGray: function(show) {
+				if (this.gray) return this;
+
+				var len = this.pxls.length;
+
+				if (show) {
+					var buf = new ArrayBuffer(len),
+						buf8 = new Uint8Array(buf),
+						buf32 = new Uint32Array(buf);
+				}
+
+				var pxls = new Uint8Array(len/4), i = -1, f = -1, bg = {r: 255, g: 255, b: 255}, lum;
+				while (i < len) {
+					lum = rgbaLumOnRgb({r: this.pxls[++i], g: this.pxls[++i], b: this.pxls[++i], a: this.pxls[++i]}, bg);
+					pxls[++f] = lum;
+					show && (buf32[f] = (255 << 24) | (lum << 16) | (lum << 8) | lum);
+				}
+
+				this.pxls = pxls;
+				this.gray = true;
+
+				this.updPx();
+
+				this.r = null;
+				this.g = null;
+				this.b = null;
+				this.a = 255;
+
+				if (show) {
+					this.ctx.data.set(buf8);
+
+					if (this.can) {
+						this.can.getContext("2d").putImageData(this.ctx, 0, 0);
+
+						// bye-bye huge ImageData
+						this.ctx = {
+							data: pxls,
+							width: this.ctx.width,
+							height: this.ctx.height,
+						};
+					}
+				}
+
+				return this;
 			},
 		},
 
