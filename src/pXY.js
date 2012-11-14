@@ -195,7 +195,7 @@ function pXY(ctx, bbox) {
 
 		px.prototype.hsv = function hsv() {
 			if (!this._hsv) {
-				var rgb = rgba2rgb({r: this.r, g: this.g, b: this.b, a: this.a}, {r: 255, g: 255, b: 255});
+				var rgb = rgba2rgb([this.r, this.g, this.b, this.a], [255, 255, 255]);
 				this._hsv = rgb2hsv(rgb.r, rgb.g, rgb.b);
 			}
 			return this._hsv;
@@ -215,7 +215,7 @@ function pXY(ctx, bbox) {
 
 		px.prototype.lum = function lum() {
 			if (!this._lum)
-				this._lum = rgbaLumOnRgb({r: this.r, g: this.g, b: this.b, a: this.a}, {r: 255, g: 255, b: 255});
+				this._lum = rgbaLumOnRgb([this.r, this.g, this.b, this.a], [255, 255, 255]);
 			return this._lum;
 		};
 
@@ -243,14 +243,14 @@ function pXY(ctx, bbox) {
 	// rgba px lum against rgb bg
 	function rgbaLumOnRgb(fg, bg) {
 		// if fully transparent, return bg lum
-		if (fg.a == 0)
-			return round(rgb2lum(bg.r,bg.g,bg.b));
+		if (fg[3] == 0)
+			return round(rgb2lum(bg[0],bg[1],bg[2]));
 
 		// only compose if alpha channel
-		if (fg.a < 255)
+		if (fg[3] < 255)
 			fg = rgba2rgb(fg, bg);
 
-		return round(rgb2lum(fg.r,fg.g,fg.b));
+		return round(rgb2lum(fg[0],fg[1],fg[2]));
 	}
 
 	// perceived luminance
@@ -278,19 +278,19 @@ function pXY(ctx, bbox) {
 	// http://en.wikipedia.org/wiki/Alpha_compositing
 	// fg is rgba, bg is rgb
 	function rgba2rgb(fg, bg) {
-		bg.r/=255;
-		bg.g/=255;
-		bg.b/=255;
+		bg[0]/=255;
+		bg[1]/=255;
+		bg[2]/=255;
 
-		fg.r/=255;
-		fg.g/=255;
-		fg.b/=255;
-		fg.a/=255;
+		fg[0]/=255;
+		fg[1]/=255;
+		fg[2]/=255;
+		fg[3]/=255;
 
 		return {
-			r: round(255 * (fg.r*fg.a + bg.r*(1-fg.a))),
-			g: round(255 * (fg.g*fg.a + bg.g*(1-fg.a))),
-			b: round(255 * (fg.b*fg.a + bg.b*(1-fg.a))),
+			r: round(255 * (fg[0]*fg[3] + bg[0]*(1-fg[3]))),
+			g: round(255 * (fg[1]*fg[3] + bg[1]*(1-fg[3]))),
+			b: round(255 * (fg[2]*fg[3] + bg[2]*(1-fg[3]))),
 		};
 	}
 
@@ -449,9 +449,9 @@ function pXY(ctx, bbox) {
 						buf32 = new Uint32Array(buf);
 				}
 
-				var pxls = new Uint8Array(len/4), i = -1, f = -1, bg = {r: 255, g: 255, b: 255}, lum;
+				var pxls = new Uint8Array(len/4), i = -1, f = -1, bg = [255, 255, 255], lum;
 				while (i < len) {
-					lum = rgbaLumOnRgb({r: this.pxls[++i], g: this.pxls[++i], b: this.pxls[++i], a: this.pxls[++i]}, bg);
+					lum = rgbaLumOnRgb([this.pxls[++i], this.pxls[++i], this.pxls[++i], this.pxls[++i]], bg);
 					pxls[++f] = lum;
 					show && (buf32[f] = (255 << 24) | (lum << 16) | (lum << 8) | lum);
 				}
