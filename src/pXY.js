@@ -182,6 +182,9 @@ function pXY(ctx, bbox) {
 //	function offs(t,r,b,l) {}
 
 /*----------------------------------Pixel and color funcs--------------------------------*/
+	// background used for alpha-composition
+	var bgRgb = [255,255,255];
+
 	// all 0-255
 	function px(r,g,b,a) {
 		this.r = r;
@@ -195,8 +198,8 @@ function pXY(ctx, bbox) {
 
 		px.prototype.hsv = function hsv() {
 			if (!this._hsv) {
-				var rgb = rgba2rgb([this.r, this.g, this.b, this.a], [255, 255, 255]);
-				this._hsv = rgb2hsv(rgb.r, rgb.g, rgb.b);
+				var rgb = rgba2rgb([this.r, this.g, this.b, this.a], bgRgb);
+				this._hsv = rgb2hsv(rgb[0], rgb[1], rgb[2]);
 			}
 			return this._hsv;
 		};
@@ -215,7 +218,7 @@ function pXY(ctx, bbox) {
 
 		px.prototype.lum = function lum() {
 			if (!this._lum)
-				this._lum = rgbaLumOnRgb([this.r, this.g, this.b, this.a], [255, 255, 255]);
+				this._lum = rgbaLumOnRgb([this.r, this.g, this.b, this.a], bgRgb);
 			return this._lum;
 		};
 
@@ -287,20 +290,11 @@ function pXY(ctx, bbox) {
 	// http://en.wikipedia.org/wiki/Alpha_compositing
 	// fg is rgba, bg is rgb
 	function rgba2rgb(fg, bg) {
-		bg[0]/=255;
-		bg[1]/=255;
-		bg[2]/=255;
-
-		fg[0]/=255;
-		fg[1]/=255;
-		fg[2]/=255;
-		fg[3]/=255;
-
-		return {
-			r: round(255 * (fg[0]*fg[3] + bg[0]*(1-fg[3]))),
-			g: round(255 * (fg[1]*fg[3] + bg[1]*(1-fg[3]))),
-			b: round(255 * (fg[2]*fg[3] + bg[2]*(1-fg[3]))),
-		};
+		return [
+			round((fg[0]*fg[3] + bg[0]*(255-fg[3]))/255),
+			round((fg[1]*fg[3] + bg[1]*(255-fg[3]))/255),
+			round((fg[2]*fg[3] + bg[2]*(255-fg[3]))/255),
+		];
 	}
 
 	// optionally skip hue calc
@@ -458,9 +452,9 @@ function pXY(ctx, bbox) {
 						buf32 = new Uint32Array(buf);
 				}
 
-				var pxls = new Uint8Array(len/4), i = -1, f = -1, bg = [255, 255, 255], lum;
+				var pxls = new Uint8Array(len/4), i = -1, f = -1, lum;
 				while (i < len) {
-					lum = rgbaLumOnRgb([this.pxls[++i], this.pxls[++i], this.pxls[++i], this.pxls[++i]], bg);
+					lum = rgbaLumOnRgb([this.pxls[++i], this.pxls[++i], this.pxls[++i], this.pxls[++i]], bgRgb);
 					pxls[++f] = lum;
 					show && (buf32[f] = (255 << 24) | (lum << 16) | (lum << 8) | lum);
 				}
