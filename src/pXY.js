@@ -242,15 +242,24 @@ function pXY(ctx, bbox) {
 
 	// rgba px lum against rgb bg
 	function rgbaLumOnRgb(fg, bg) {
-		// if fully transparent, return bg lum
-		if (fg[3] == 0)
+		// opaque fg
+		if (fg[3] == 255) {
+			// white
+			if (fg[0] == 255 && fg[1] == 255 && fg[2] == 255)
+				return 255;
+			return round(rgb2lum(fg[0],fg[1],fg[2]));
+		}
+		// transparent fg
+		else if (fg[3] == 0) {
+			// white bg
+			if (bg[0] == 255 && bg[1] == 255 && bg[2] == 255)
+				return 255;
 			return round(rgb2lum(bg[0],bg[1],bg[2]));
-
-		// only compose if alpha channel
-		if (fg[3] < 255)
-			fg = rgba2rgb(fg, bg);
-
-		return round(rgb2lum(fg[0],fg[1],fg[2]));
+		}
+		else {
+			fg = rgba2rgb(fg, bg);		// alpha-compose
+			return round(rgb2lum(fg[0],fg[1],fg[2]));
+		}
 	}
 
 	// perceived luminance
