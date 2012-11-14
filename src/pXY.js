@@ -468,18 +468,15 @@ function pXY(ctx, bbox) {
 
 				if (show) {
 					this.ctx.data.set(buf8);
-
-					if (this.can) {
-						this.can.getContext("2d").putImageData(this.ctx, 0, 0);
-
-						// bye-bye huge ImageData
-						this.ctx = {
-							data: pxls,
-							width: this.ctx.width,
-							height: this.ctx.height,
-						};
-					}
+					this.can && this.can.getContext("2d").putImageData(this.ctx, 0, 0);
 				}
+
+				// bye-bye huge ImageData
+				this.ctx = {
+					data: pxls,
+					width: this.ctx.width,
+					height: this.ctx.height,
+				};
 
 				return this;
 			},
