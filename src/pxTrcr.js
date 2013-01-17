@@ -54,19 +54,26 @@ function pxTrcr(w, h, ctnr) {
 		this.pxls = this.imgd.data;
 		this.dirty = false;
 
-		this.setPx = function setPxLyr(i,px) {
-			i *= 4;		// subpixel index
+		var buf = new ArrayBuffer(this.pxls.length),
+			buf8 = new Uint8Array(buf),
+			buf32 = new Uint32Array(buf);
 
-			this.pxls[i]	= px[0];
-			this.pxls[++i]	= px[1];
-			this.pxls[++i]	= px[2];
-			this.pxls[++i]	= px[3] || 255;
+		this.setPx = function setPxLyr(i,px) {
+			px[3] = px[3] || 255;
+			buf32[i] =
+				(px[3] << 24) |	// alpha
+				(px[2] << 16) |	// blue
+				(px[1] <<  8) |	// green
+				 px[0];			// red
 
 			this.dirty = true;
 		};
 
 		this.upd = function updLyr() {
-			this.dirty && this.ctx.putImageData(this.imgd, 0, 0);
+			if (!this.dirty) return;
+
+			this.imgd.data.set(buf8);
+			this.ctx.putImageData(this.imgd, 0, 0);
 			this.dirty = false;
 		};
 
