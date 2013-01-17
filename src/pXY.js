@@ -178,6 +178,13 @@ function pXY(ctx, bbox) {
 		return bb;
 	}
 
+	// expose
+	pXY.rand = rand;
+	pXY.round = round;
+
+	pXY.xywh = xywh;
+	pXY.xyxy = xyxy;
+
 	// bbox from opposite corner indicies
 //	function idid(idx0, idx1) {}
 	// bbox from edge offsets
