@@ -21,6 +21,9 @@ function pxChkr(cfg, pxy) {
 		return !(val < min || val > max);
 	}
 
+	// expose
+	pxChkr.inRange = inRange;
+
 	// modules
 	var mods = {
 		all: {
