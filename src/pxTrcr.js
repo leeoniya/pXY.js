@@ -9,9 +9,11 @@ function pxTrcr(w, h, ctnr) {
 	this.w = w;
 	this.h = h;
 	this.record = false;
+	this.buffer = false;
 	this.timeout = 1000/60;
 	this.queue = null;
 	this.ctnr = ctnr || null;
+	this.buf = null;
 
 	// layer stack
 	this.lyrs = {};
@@ -132,7 +134,7 @@ function pxTrcr(w, h, ctnr) {
 	var mods = {
 		queue: {
 			// enable recording
-			rec: function rec() {
+			recOn: function rec() {
 				this.record = true;
 				this.queue = new q;
 
@@ -144,8 +146,50 @@ function pxTrcr(w, h, ctnr) {
 
 				return this;
 			},
+			bufOn: function() {
+				this.buffer = true;
+				this.buf = [];
+				!this.lyrs.length && this.push([0,0,0,0], 0);
+
+				return this;
+			},
+			bufOff: function() {
+				this.buffer = false;
+				this.buf = null;
+
+				return this;
+			},
+			bufGet: function(clear) {
+				var buf = this.buf;
+
+				if (clear)
+					this.buf = [];
+
+				return buf;
+			},
+			bufRun: function(buf) {
+				for (var i in buf)
+					this[buf[i][0]].apply(this, buf[i][1]);
+
+				return this;
+			},
 			// queues or executes functions
-			exec: function exec(fn, args, timeout) {
+			exec: function exec(fn, fnName, args, timeout) {
+				if (this.buffer) {
+					if (fnName == "notify") {			// move this out?
+						var evt = args[0];
+					//	evt.i = evt.pxy.absIdx();		// abs here, but relative x/y?
+						evt.x = evt.pxy.x;
+						evt.y = evt.pxy.y;
+						delete evt.pxy;
+					}
+					else
+						args = Array.prototype.slice.apply(args);
+
+					this.buf.push([fnName,args]);
+					return this;
+				}
+
 				if (!this.record)
 					return fn.apply(this, args);
 
@@ -165,7 +209,7 @@ function pxTrcr(w, h, ctnr) {
 					this.hist[0] = [new Set].concat(pxLyr);
 				}
 
-				this.exec(go, arguments, 0);
+				this.exec(go, "set", arguments, 0);
 
 				return this;
 			},
@@ -175,7 +219,7 @@ function pxTrcr(w, h, ctnr) {
 					this.hist.unshift([new Set].concat(pxLyr));
 				}
 
-				this.exec(go, arguments, 0);
+				this.exec(go, "push", arguments, 0);
 
 				return this;
 			},
@@ -183,7 +227,7 @@ function pxTrcr(w, h, ctnr) {
 				if (now)
 					this.hist.shift();
 				else
-					this.exec(this.pop, [true], 0);
+					this.exec(this.pop, "pop", [true], 0);
 
 				return this;
 			},
@@ -193,7 +237,7 @@ function pxTrcr(w, h, ctnr) {
 					this.hist.unshift([new One].concat(pxLyr));
 				}
 
-				this.exec(go, arguments, 0);
+				this.exec(go, "one", arguments, 0);
 
 				return this;
 			},
@@ -208,18 +252,18 @@ function pxTrcr(w, h, ctnr) {
 						return [this.hist[0][1], this.hist[0][2]];	// inherits both
 					case 1:
 						if (isLyrId(a1))
-							return [this.hist[0][1], this.lyr(a1)];	// get/make layer, inherit px
+							return [this.hist[0][1], this.lyr(a1, this.buffer)];	// get/make layer, inherit px
 						return [a1, this.hist[0][2]];				// use px, inherit layer
 					case 2:
 						if (isLyrId(a1))
-							return [a2, this.lyr(a1)];				// get/make layer, use px
-						return [a1, this.lyr(a2)];					// use px, get/make layer
+							return [a2, this.lyr(a1, this.buffer)];				// get/make layer, use px
+						return [a1, this.lyr(a2, this.buffer)];					// use px, get/make layer
 				}
 			},
 		},
 		layer: {
 			lyr: function lyr(id) {
-				return this.exec(lyrProduce, arguments);
+				return this.exec(lyrProduce, "lyr", arguments);
 			},
 			clr: function clr(lyrId) {
 				if (lyrId && this.lyrs[lyrId])
@@ -232,7 +276,7 @@ function pxTrcr(w, h, ctnr) {
 				return this;
 			},
 			// draw pixel to layer at idx
-			setPx: function setPx(i) {
+			setPx: function setPx(i, lyrId) {		// TODO, trace to inactive layer by id (good for async/web-workers)
 				var top = this.hist[0];
 				top[2].setPx(i, top[1]);
 			},
@@ -293,8 +337,8 @@ function pxTrcr(w, h, ctnr) {
 					this.pop(true);
 			},
 			notify: function notify(evt) {
-				evt.i = evt.pxy.absIdx();
-				this.exec(this.handle, [evt]);
+				if (!evt.i && evt.i !== 0) evt.i = evt.pxy.absIdx();			// will fail for i = 0?
+				this.exec(this.handle, "notify", [evt]);
 			},
 		},
 	};
