@@ -243,7 +243,9 @@ function pXY(ctx, bbox) {
 
 		pxGray.prototype.sat = nullRet;
 
-		pxGray.prototype.lum = nullRet;
+		pxGray.prototype.lum = function() {
+			return this.v;
+		};
 
 	// rgba px lum against rgb bg
 	function rgbaLumOnRgb(fg, bg) {
