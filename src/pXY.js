@@ -625,30 +625,30 @@ function pXY(ctx, bbox) {
 				stepX = stepX || 1;
 				stepY = stepY || 1;
 
-				var lft = 0,
-					top = 0,
-					rgt = this.w - 1,
-					btm = this.h - 1;
+				var _lft = 0,
+					_top = 0,
+					_rgt = this.w - 1,
+					_btm = this.h - 1;
 
 				// secondary axis advancing functions
 				switch(ori) {
 					case 0:
 						var nextXY = function nextXY() {
 							var nxtX = this.x + stepX;
-							if (stepX > 0 && nxtX > rgt)
-								return [lft, this.y + stepY];
-							if (stepX < 0 && nxtX < lft)
-								return [rgt, this.y + stepY];
+							if (stepX > 0 && nxtX > _rgt)
+								return [_lft, this.y + stepY];
+							if (stepX < 0 && nxtX < _lft)
+								return [_rgt, this.y + stepY];
 							return [nxtX, this.y];
 						};
 						break;
 					case 1:
 						var nextXY = function nextXY() {
 							var nxtY = this.y + stepY;
-							if (stepY > 0 && nxtY > btm)
-								return [this.x + stepX, top];
-							if (stepY < 0 && nxtY < top)
-								return [this.x + stepX, btm];
+							if (stepY > 0 && nxtY > _btm)
+								return [this.x + stepX, _top];
+							if (stepY < 0 && nxtY < _top)
+								return [this.x + stepX, _btm];
 							return [this.x, nxtY];
 						};
 						break;
