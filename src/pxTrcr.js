@@ -11,7 +11,7 @@ function pxTrcr(w, h, ctnr) {
 	this.record = false;
 	this.timeout = 1000/60;
 	this.queue = null;
-	this.ctnr = ctnr;
+	this.ctnr = ctnr || null;
 
 	// layer stack
 	this.lyrs = {};
@@ -85,13 +85,22 @@ function pxTrcr(w, h, ctnr) {
 		};
 	}
 
+	function lyrFaux(w, h, id) {
+		this.id = id;
+	}
+
 	// get and/or make a layer
 	function lyrProduce(id) {
 		if (this.lyrs[id])
 			return this.lyrs[id];
 
-		this.lyrs[id] = new lyr(this.w, this.h, id);
-		this.ctnr.appendChild(this.lyrs[id].can);
+		// return a fake, mock layer when in a worker context
+		if (typeof window === "undefined")
+			this.lyrs[id] = new lyrFaux(this.w, this.h, id);
+		else
+			this.lyrs[id] = new lyr(this.w, this.h, id);
+
+		this.ctnr && this.ctnr.appendChild(this.lyrs[id].can);
 
 		return this.lyrs[id];
 	}
@@ -260,7 +269,7 @@ function pxTrcr(w, h, ctnr) {
 				else {
 					var cans = this.rend();
 					for (var i in cans)
-						this.ctnr.appendChild(cans[i]);
+						this.ctnr && this.ctnr.appendChild(cans[i]);
 				}
 
 				return this;
