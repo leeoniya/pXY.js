@@ -112,6 +112,11 @@ function pXY(ctx, bbox) {
 
 			can.width = img.width;
 			can.height = img.height;
+/*
+			ctx.imageSmoothingEnabled = false;
+			ctx.webkitImageSmoothingEnabled = false;
+			ctx.mozImageSmoothingEnabled = false;
+*/
 			ctx.drawImage(img, 0, 0);
 
 			// create a pXY instance from ImageData
