@@ -14,6 +14,7 @@ function pXY(ctx, bbox) {
 	if (ctx instanceof pXY) {
 		this.ctx = ctx;
 		this.pxls = ctx.pxls;
+		this.gray = ctx.gray;
 	}
 	else {
 		// web workers have no access to DOM prototypes for instanceof to work
@@ -48,6 +49,7 @@ function pXY(ctx, bbox) {
 			case "Array":
 			case "Uint8Array":
 			case "Uint8ClampedArray":
+				this.gray = true;
 				this.ctx = {
 					data: ctx,
 					width: bbox.w,
@@ -58,8 +60,8 @@ function pXY(ctx, bbox) {
 
 		this.ctx.lft = 0;
 		this.ctx.top = 0;
-		this.ctx.w = ctx.width;
-		this.ctx.h = ctx.height;
+		this.ctx.w = this.ctx.width;
+		this.ctx.h = this.ctx.height;
 
 		this.pxls = this.ctx.data;
 	}
@@ -87,7 +89,7 @@ function pXY(ctx, bbox) {
 	this.a = null;
 	// grayscale value
 	this.v = null;
-	this.gray = false;
+	this.gray = this.gray || false;
 
 	// event subscriber registry
 	this.subs = [
