@@ -125,7 +125,7 @@ function pxTrcr(w, h, ctnr) {
 			// DRY base method
 			cfgOp: function cfgOp(fnIdx, args) {
 				if (this._rec) {
-					this.enq(fnIdx, args);
+					this.enq(fnIdx, Array.prototype.slice.call(args));
 					return this;
 				}
 
@@ -296,7 +296,7 @@ function pxTrcr(w, h, ctnr) {
 			// DRY base method
 			evtOp: function evtOp(fnIdx, args) {
 				if (this._rec) {
-					this.enq(fnIdx, args);
+					this.enq(fnIdx, Array.prototype.slice.call(args));
 					return this;
 				}
 
