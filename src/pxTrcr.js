@@ -311,9 +311,9 @@ function pxTrcr(w, h, ctnr) {
 				}
 
 				// state enter/exit
-				if (fnIdx == 8)
+				if (fnIdx == 8 && args[3] in this.cfgS)
 					return this.push.apply(this, this.cfgS[args[3]]);
-				if (fnIdx == 9)
+				if (fnIdx == 9 && args[3] in this.cfgS)
 					return this.pop();
 
 				// set pixel for moves
