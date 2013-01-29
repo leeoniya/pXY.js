@@ -582,9 +582,15 @@ function pXY(ctx, bbox) {
 				this.states.push(name);
 				return this.pub({type: 8, id: name, pxy: this});
 			},
-			popState: function popState() {
-				var name = this.states.pop();
-				return this.pub({type: 9, id: name, pxy: this});
+			popState: function popState(qty) {
+				var i = qty === true ? this.states.length : qty || 1;
+
+				while (i--) {
+					var name = this.states.pop();
+					this.pub({type: 9, id: name, pxy: this});
+				}
+
+				return this;
 			}
 		},
 
