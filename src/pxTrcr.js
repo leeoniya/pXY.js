@@ -10,14 +10,14 @@ function pxTrcr(w, h, ctnr) {
 	this.h = h;
 	this.ctnr = ctnr || null;
 
-	// layer/px/chkr combos
-	this.cfgs = [];
-	this.lyrs = {};
+	this.cfgs = [];		// stack of layer/px/chkr combos
+	this.lyrs = {};		// trace layers
+	this.cfgS = {};		// config holder for custom states
 
 	// recording & buffering
 	this._rec = false;
 	this.buf = [];
-	this.rid = null;		// id returned by reqAnimFrame
+	this.rid = null;	// id returned by reqAnimFrame
 
 	if (!this.ctnr)
 		this.rec();
@@ -116,16 +116,24 @@ function pxTrcr(w, h, ctnr) {
 				return op;						// hack to allow introspection
 			}
 		},
-		stack: {
+		config: {
 			// @params: pxl, lyrId
 			set:  function set()  {return this.cfgOp(3, arguments);},
 			push: function push() {return this.cfgOp(4, arguments);},
 			pop:  function pop()  {return this.cfgOp(5, arguments);},
 			one:  function one()  {return this.cfgOp(6, arguments);},
+			// @params: name, pxl, lyrId
+			state: function state() {return this.cfgOp(7, arguments);},
 			// DRY base method
 			cfgOp: function cfgOp(fnIdx, args) {
 				if (this._rec) {
 					this.enq(fnIdx, Array.prototype.slice.call(args));
+					return this;
+				}
+
+				// register pxLyr cfg for state
+				if (fnIdx == 7) {
+					this.cfgS[args[0]] = this.pxLyr.apply(this, Array.prototype.slice.call(args, 1));
 					return this;
 				}
 
@@ -293,12 +301,20 @@ function pxTrcr(w, h, ctnr) {
 			move:	function move()  {return this.evtOp(0, arguments);},
 			scan0:	function scan0() {return this.evtOp(1, arguments);},
 			scan1:	function scan1() {return this.evtOp(2, arguments);},
+			enter:	function enter() {return this.evtOp(8, arguments);},
+			exit:	function exit()  {return this.evtOp(9, arguments);},
 			// DRY base method
 			evtOp: function evtOp(fnIdx, args) {
 				if (this._rec) {
 					this.enq(fnIdx, Array.prototype.slice.call(args));
 					return this;
 				}
+
+				// state enter/exit
+				if (fnIdx == 8)
+					return this.push.apply(this, this.cfgS[args[3]]);
+				if (fnIdx == 9)
+					return this.pop();
 
 				// set pixel for moves
 				if (fnIdx == 0)
@@ -320,7 +336,7 @@ function pxTrcr(w, h, ctnr) {
 	}
 
 	// alias ops
-	var ops = "move scan0 scan1 set push pop one".split(" ");
+	var ops = "move scan0 scan1 set push pop one state enter exit".split(" ");
 	for (var k in ops)
 		pxTrcr.prototype[k] = pxTrcr.prototype[ops[k]];
 })();

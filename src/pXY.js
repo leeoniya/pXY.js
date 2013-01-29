@@ -10,6 +10,8 @@ function pXY(ctx, bbox) {
 	this.can = null;
 	this.pxls = null;		// px array
 
+	this.states = [];		// custom state stack
+
 	// pXY
 	if (ctx instanceof pXY) {
 		this.ctx = ctx;
@@ -573,6 +575,17 @@ function pXY(ctx, bbox) {
 				this.moveTo(pos.x, pos.y, true, !pub);
 				return this;
 			},
+		},
+
+		state: {
+			pushState: function pushState(name) {
+				this.states.push(name);
+				return this.pub({type: 8, id: name, pxy: this});
+			},
+			popState: function popState() {
+				var name = this.states.pop();
+				return this.pub({type: 9, id: name, pxy: this});
+			}
 		},
 
 		scan: {
