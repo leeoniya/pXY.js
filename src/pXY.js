@@ -94,9 +94,8 @@ function pXY(ctx, bbox) {
 	this.gray = this.gray || false;
 
 	// event subscriber registry
-	this.subs = [
-	//	[fn, ctx],
-	];
+	// arrays of [fn, ctx] pairs
+	this.subs = {0: [], 1: [], 2: [], 8: [], 9: []};
 
 	// accumulated offset cache
 	this.offs = {};
@@ -337,28 +336,48 @@ function pXY(ctx, bbox) {
 	var mods = {
 		// pub/sub
 		event: {
-			sub: function sub(fn, ctx) {
+			sub: function sub(fn, ctx, types) {
 				ctx = ctx || this;
-				this.subs.push([fn, ctx]);
+				types = types || [0,1,2,8,9];		// TODO: renumber
+
+				var self = this;
+				types.forEach(function(type){
+					self.subs[type].push([fn, ctx]);
+				});
+
 				return this;
 			},
 
-			unsub: function unsub(fn, ctx) {
+			unsub: function unsub(fn, ctx, types) {
 				ctx = ctx || this;
-				this.subs = this.subs.filter(
-					function(fnCtx) {
-						if (fnCtx[0] !== fn && fnCtx[1] !== ctx) return fnCtx;
-					}
-				);
+				types = types || [0,1,2,8,9];
+
+				var self = this;
+				types.forEach(function(type){
+					self.subs[type] = self.subs[type].filter(function(fnCtx) {
+						if (fnCtx[0] !== fn || fnCtx[1] !== ctx)
+							return true;
+
+						return false;
+					});
+				});
+
 				return this;
 			},
 
-			pub: function pub(evt) {
-				this.subs.forEach(
-					function(fnCtx) {
-						fnCtx[0].call(fnCtx[1], evt);
-					}
-				);
+			pub: function pub(type, id) {
+				if (!this.subs[type].length)
+					return this;
+
+				var evt = {type: type, pxy: this};
+
+				if (id)
+					evt.id = id;
+
+				this.subs[type].forEach(function(fnCtx) {
+					fnCtx[0].call(fnCtx[1], evt);
+				});
+
 				return this;
 			},
 		},
@@ -530,8 +549,8 @@ function pXY(ctx, bbox) {
 				!(updPx === false) && this.updPx();
 
 				// publish move event
-				if (!noPub && this.subs.length) {
-					this.pub({type: 0, pxy: this});
+				if (!noPub) {
+					this.pub(0);
 				}
 
 				return this;
@@ -580,14 +599,14 @@ function pXY(ctx, bbox) {
 		state: {
 			pushState: function pushState(name) {
 				this.states.push(name);
-				return this.pub({type: 8, id: name, pxy: this});
+				return this.pub(8, name);
 			},
 			popState: function popState(qty) {
 				var i = qty === true ? this.states.length : qty || 1;
 
 				while (i--) {
 					var name = this.states.pop();
-					this.pub({type: 9, id: name, pxy: this});
+					this.pub(9, name);
 				}
 
 				return this;
@@ -600,10 +619,8 @@ function pXY(ctx, bbox) {
 				var getNext = nextXY instanceof Array ? function() {return [this.x + nextXY[0], this.y + nextXY[1]];} : nextXY;
 
 				// publish scan start event
-				if (this.subs.length) {
-					var scanId = rand(10000,99999);
-					this.pub({type: 1, id: scanId, pxy: this});
-				}
+				var scanId = rand(10000,99999);
+				this.pub(1, scanId);
 
 				// move, get pixels, check tolers, run callback
 				var next, fnChk = true, stepCnt = 0;
@@ -613,7 +630,7 @@ function pXY(ctx, bbox) {
 				} while (fnChk !== false && next && this.moveTo(next[0], next[1]).ok);
 
 				// publish scan end event
-				this.subs.length && this.pub({type: 2, id: scanId, pxy: this});
+				this.pub(2, scanId);
 
 				return this;
 			},
