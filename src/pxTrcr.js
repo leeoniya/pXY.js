@@ -10,9 +10,9 @@ function pxTrcr(w, h, ctnr) {
 	this.h = h;
 	this.ctnr = ctnr || null;
 
-	this.cfgs = [];		// stack of layer/px/chkr combos
+	this.cfgs = [];		// chkr/px/layer stack
 	this.lyrs = {};		// trace layers
-	this.cfgS = {};		// config holder for custom states
+	this.cfgS = [];		// state/px/layer configs
 
 	// recording & buffering
 	this._rec = false;
@@ -145,7 +145,8 @@ function pxTrcr(w, h, ctnr) {
 
 				// register pxLyr cfg for state
 				if (fnIdx == FN_STATE_BIND) {
-					this.cfgS[args[0]] = this.pxLyr.apply(this, Array.prototype.slice.call(args, 1));
+					var pxLyr = this.pxLyr.apply(this, Array.prototype.slice.call(args, 1));
+					this.cfgS.push([args[0]].concat(pxLyr));
 					return this;
 				}
 
@@ -322,11 +323,29 @@ function pxTrcr(w, h, ctnr) {
 					return this;
 				}
 
+				var self = this;
 				// state enter/exit
-				if (fnIdx == EV_STATE_ENTER && args[3] in this.cfgS)
-					return this.push.apply(this, this.cfgS[args[3]]);
-				if (fnIdx == EV_STATE_EXIT && args[3] in this.cfgS)
-					return this.pop();
+				if (fnIdx == EV_STATE_ENTER) {
+					this.cfgS.forEach(function(cfg){
+						if (args[3] === cfg[0] || cfg[0] instanceof RegExp && cfg[0].test(args[3])) {
+							self.push(cfg[1], cfg[2]);
+							return false;
+						}
+					});
+
+					return this;
+				}
+
+				if (fnIdx == EV_STATE_EXIT) {
+					this.cfgS.forEach(function(cfg){
+						if (args[3] === cfg[0] || cfg[0] instanceof RegExp && cfg[0].test(args[3])) {
+							self.pop();
+							return false;
+						}
+					});
+
+					return this;
+				}
 
 				// set pixel for moves
 				if (fnIdx === EV_MOVE)
