@@ -113,7 +113,7 @@ function pXY(ctx, bbox) {
 	pXY.load = function loadImg(src, fn) {
 		var img = new Image();
 
-		img.onload = function() {
+		img.onload = function imgOnLoad() {
 			var can = document.createElement("canvas"),
 				ctx = can.getContext("2d"),
 				pxy = null,
@@ -481,7 +481,7 @@ function pXY(ctx, bbox) {
 			},
 
 			// convert full canvas to grayscale
-			toGray: function(show) {
+			toGray: function toGray(show) {
 				if (this.gray) return this;
 
 				var len = this.pxls.length;
@@ -631,7 +631,7 @@ function pXY(ctx, bbox) {
 		scan: {
 			// base for scanners
 			scan: function scan(nextXY, fn) {
-				var getNext = nextXY instanceof Array ? function() {return [this.x + nextXY[0], this.y + nextXY[1]];} : nextXY;
+				var getNext = nextXY instanceof Array ? function getNextXY() {return [this.x + nextXY[0], this.y + nextXY[1]];} : nextXY;
 
 				// publish scan start event
 				var scanId = rand(10000,99999);

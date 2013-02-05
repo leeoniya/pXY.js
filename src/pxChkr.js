@@ -61,7 +61,7 @@ function pxChkr(cfg, pxy) {
 			chk: function chk() {
 				this.get();
 
-				var chk = true,	i = this.cfg.length, tol, px, res;
+				var chk = true, i = this.cfg.length, tol, px, res;
 
 				while (i--) {
 					tol	= this.cfg[i].tol;
