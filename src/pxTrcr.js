@@ -27,6 +27,18 @@ function pxTrcr(w, h, ctnr) {
 }
 
 (function() {
+	var	EV_MOVE			= 0,
+		EV_SCAN_START	= 1,
+		EV_SCAN_END		= 2,
+		EV_STATE_ENTER	= 3,
+		EV_STATE_EXIT	= 4,
+
+		FN_SET			= 5,
+		FN_PUSH			= 6,
+		FN_POP			= 7,
+		FN_ONE			= 8,
+		FN_STATE_BIND	= 9;
+
 	function Lyr(w, h, id) {
 		this.id = id;
 
@@ -76,9 +88,9 @@ function pxTrcr(w, h, ctnr) {
 		this.chk = function(type, id) {
 			var ret;
 			switch (type) {
-				case 0: ret = !this.fired; break;
-				case 1: ret = true; this.id = id; break;
-				case 2: ret = this.id == id ? false : true; break;
+				case EV_MOVE: ret = !this.fired; break;
+				case EV_SCAN_START: ret = true; this.id = id; break;
+				case EV_SCAN_END: ret = this.id == id ? false : true; break;
 			}
 			this.fired && (this.fired = false);
 			return ret;
@@ -118,12 +130,12 @@ function pxTrcr(w, h, ctnr) {
 		},
 		config: {
 			// @params: pxl, lyrId
-			set:  function set()  {return this.cfgOp(3, arguments);},
-			push: function push() {return this.cfgOp(4, arguments);},
-			pop:  function pop()  {return this.cfgOp(5, arguments);},
-			one:  function one()  {return this.cfgOp(6, arguments);},
+			set:  function set()  {return this.cfgOp(FN_SET,  arguments);},
+			push: function push() {return this.cfgOp(FN_PUSH, arguments);},
+			pop:  function pop()  {return this.cfgOp(FN_POP,  arguments);},
+			one:  function one()  {return this.cfgOp(FN_ONE,  arguments);},
 			// @params: name, pxl, lyrId
-			state: function state() {return this.cfgOp(7, arguments);},
+			state: function state() {return this.cfgOp(FN_STATE_BIND, arguments);},
 			// DRY base method
 			cfgOp: function cfgOp(fnIdx, args) {
 				if (this._rec) {
@@ -132,19 +144,19 @@ function pxTrcr(w, h, ctnr) {
 				}
 
 				// register pxLyr cfg for state
-				if (fnIdx == 7) {
+				if (fnIdx == FN_STATE_BIND) {
 					this.cfgS[args[0]] = this.pxLyr.apply(this, Array.prototype.slice.call(args, 1));
 					return this;
 				}
 
-				if (fnIdx !== 5)
+				if (fnIdx !== FN_POP)
 					var pxLyr = this.pxLyr.apply(this, args);
 
 				switch (fnIdx) {
-					case 3: this.cfgs[0] = [new SetChkr].concat(pxLyr);		break;
-					case 4: this.cfgs.unshift([new SetChkr].concat(pxLyr));	break;
-					case 5: this.cfgs.shift();								break;
-					case 6: this.cfgs.unshift([new OneChkr].concat(pxLyr));	break;
+					case FN_SET:  this.cfgs[0] = [new SetChkr].concat(pxLyr);		break;
+					case FN_PUSH: this.cfgs.unshift([new SetChkr].concat(pxLyr));	break;
+					case FN_POP:  this.cfgs.shift();								break;
+					case FN_ONE:  this.cfgs.unshift([new OneChkr].concat(pxLyr));	break;
 				}
 
 				return this;
@@ -254,7 +266,7 @@ function pxTrcr(w, h, ctnr) {
 							while (opers / frame < ratio && self.buf.length) {
 								fnIdx = self.deq()[0];
 
-								if (fnIdx == 0) {
+								if (fnIdx === EV_MOVE) {
 									frOps++;
 									opers++;
 								}
@@ -298,11 +310,11 @@ function pxTrcr(w, h, ctnr) {
 		},
 		events: {
 			// @params: x, y, i, id
-			move:	function move()  {return this.evtOp(0, arguments);},
-			scan0:	function scan0() {return this.evtOp(1, arguments);},
-			scan1:	function scan1() {return this.evtOp(2, arguments);},
-			enter:	function enter() {return this.evtOp(8, arguments);},
-			exit:	function exit()  {return this.evtOp(9, arguments);},
+			move:	function move()  {return this.evtOp(EV_MOVE,		arguments);},
+			scan0:	function scan0() {return this.evtOp(EV_SCAN_START,	arguments);},
+			scan1:	function scan1() {return this.evtOp(EV_SCAN_END,	arguments);},
+			enter:	function enter() {return this.evtOp(EV_STATE_ENTER,	arguments);},
+			exit:	function exit()  {return this.evtOp(EV_STATE_EXIT,	arguments);},
 			// DRY base method
 			evtOp: function evtOp(fnIdx, args) {
 				if (this._rec) {
@@ -311,13 +323,13 @@ function pxTrcr(w, h, ctnr) {
 				}
 
 				// state enter/exit
-				if (fnIdx == 8 && args[3] in this.cfgS)
+				if (fnIdx == EV_STATE_ENTER && args[3] in this.cfgS)
 					return this.push.apply(this, this.cfgS[args[3]]);
-				if (fnIdx == 9 && args[3] in this.cfgS)
+				if (fnIdx == EV_STATE_EXIT && args[3] in this.cfgS)
 					return this.pop();
 
 				// set pixel for moves
-				if (fnIdx == 0)
+				if (fnIdx === EV_MOVE)
 					this.setPx(args[2]);
 
 				if (!this.cfgs[0][0].chk(fnIdx, args[3]))
@@ -336,7 +348,20 @@ function pxTrcr(w, h, ctnr) {
 	}
 
 	// alias ops
-	var ops = "move scan0 scan1 set push pop one state enter exit".split(" ");
+	var ops = {
+		move:	EV_MOVE,
+		scan0:	EV_SCAN_START,
+		scan1:	EV_SCAN_END,
+		enter:	EV_STATE_ENTER,
+		exit:	EV_STATE_EXIT,
+
+		set:	FN_SET,
+		push:	FN_PUSH,
+		pop:	FN_POP,
+		one:	FN_ONE,
+		state:	FN_STATE_BIND,
+	};
+
 	for (var k in ops)
-		pxTrcr.prototype[k] = pxTrcr.prototype[ops[k]];
+		pxTrcr.prototype[ops[k]] = pxTrcr.prototype[k];
 })();

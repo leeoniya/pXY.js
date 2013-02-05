@@ -94,14 +94,22 @@ function pXY(ctx, bbox) {
 	this.gray = this.gray || false;
 
 	// event subscriber registry
-	// arrays of [fn, ctx] pairs
-	this.subs = {0: [], 1: [], 2: [], 8: [], 9: []};
+	// arrays of [evt_id]: [fn, ctx] pairs
+	this.subs = [];
+	this.subinit();
 
 	// accumulated offset cache
 	this.offs = {};
 }
 
 (function() {
+	var	EV_MOVE			= 0,
+		EV_SCAN_START	= 1,
+		EV_SCAN_END		= 2,
+		EV_STATE_ENTER	= 3,
+		EV_STATE_EXIT	= 4,
+		EV_ALL			= [EV_MOVE,EV_SCAN_START,EV_SCAN_END,EV_STATE_ENTER,EV_STATE_EXIT];
+
 	pXY.load = function loadImg(src, fn) {
 		var img = new Image();
 
@@ -336,9 +344,16 @@ function pXY(ctx, bbox) {
 	var mods = {
 		// pub/sub
 		event: {
+			subinit: function subinit() {
+				var self = this;
+
+				EV_ALL.forEach(function(type){
+					self.subs[type] = [];
+				});
+			},
 			sub: function sub(fn, ctx, types) {
 				ctx = ctx || this;
-				types = types || [0,1,2,8,9];		// TODO: renumber
+				types = types || EV_ALL;
 
 				var self = this;
 				types.forEach(function(type){
@@ -350,7 +365,7 @@ function pXY(ctx, bbox) {
 
 			unsub: function unsub(fn, ctx, types) {
 				ctx = ctx || this;
-				types = types || [0,1,2,8,9];
+				types = types || EV_ALL;
 
 				var self = this;
 				types.forEach(function(type){
@@ -550,7 +565,7 @@ function pXY(ctx, bbox) {
 
 				// publish move event
 				if (!noPub) {
-					this.pub(0);
+					this.pub(EV_MOVE);
 				}
 
 				return this;
@@ -599,14 +614,14 @@ function pXY(ctx, bbox) {
 		state: {
 			pushState: function pushState(name) {
 				this.states.push(name);
-				return this.pub(8, name);
+				return this.pub(EV_STATE_ENTER, name);
 			},
 			popState: function popState(qty) {
 				var i = qty === true ? this.states.length : qty || 1;
 
 				while (i--) {
 					var name = this.states.pop();
-					this.pub(9, name);
+					this.pub(EV_STATE_EXIT, name);
 				}
 
 				return this;
@@ -620,7 +635,7 @@ function pXY(ctx, bbox) {
 
 				// publish scan start event
 				var scanId = rand(10000,99999);
-				this.pub(1, scanId);
+				this.pub(EV_SCAN_START, scanId);
 
 				// move, get pixels, check tolers, run callback
 				var next, fnChk = true, stepCnt = 0;
@@ -630,7 +645,7 @@ function pXY(ctx, bbox) {
 				} while (fnChk !== false && next && this.moveTo(next[0], next[1]).ok);
 
 				// publish scan end event
-				this.pub(2, scanId);
+				this.pub(EV_SCAN_END, scanId);
 
 				return this;
 			},
