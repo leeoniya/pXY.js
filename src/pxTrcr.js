@@ -150,7 +150,7 @@ function pxTrcr(w, h, ctnr) {
 					return this;
 				}
 
-				if (fnIdx !== FN_POP)
+				if (fnIdx != FN_POP)
 					var pxLyr = this.pxLyr.apply(this, args);
 
 				switch (fnIdx) {
