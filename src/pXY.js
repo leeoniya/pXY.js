@@ -691,10 +691,12 @@ function pXY(ctx, bbox) {
 
 			// base for bidirectional scanners
 			// ori = primary axis orientation (0 = horiz, 1 = vert)
+			// TODO: add bbox param?
 			scanBi: function scanBi(ori, fn, stepX, stepY) {
 				stepX = stepX || 1;
 				stepY = stepY || 1;
 
+				// this can be passed in and custom
 				var _lft = 0,
 					_top = 0,
 					_rgt = this.w - 1,
@@ -736,6 +738,96 @@ function pXY(ctx, bbox) {
 				var args = Array.prototype.slice.call(arguments);
 				args.unshift(1);
 				return this.scanBi.apply(this, args);
+			},
+
+			// TODO: maybe DRY out with scanBi
+			scanPolar: function scanPolar(ori, fn, stepA, stepR, bbox, aType) {
+				bbox = bbox || {};
+
+				var rmin = bbox.rmin || 1,
+					rmax = bbox.rmax || Math.min(this.h/2, this.w/2),
+					amin = bbox.amin || 0,
+					amax = bbox.amax || 2*Math.PI,
+					degs = degs || false;
+
+				stepA = stepA || 1;
+				aType = aType || 1;
+				stepR = stepR || 1;
+
+				var cx = this.x,
+					cy = this.y,
+					rcur = stepR > 0 ? rmin : rmax,
+					acur = stepA > 0 ? amin : amax;
+
+				incrA = getIncrA(rcur);						// angle increment (radians)
+
+				function getIncrA(radius) {
+					switch (aType) {
+						case 1: return stepA/radius;		// int, # pixels to advance along circumfrence (adaptive as radius changes)
+						case 2: return stepA;				// float, radians to advance (results in fixed angle)
+						case 3: return stepA * Math.PI/180;	// float, degrees to advance, TODO: precompute this
+					}
+				}
+
+				// TODO: DRY
+				switch(ori) {
+					case 0:
+						var nextXY = function nextXY() {
+							var nxtA = acur + incrA,
+								AR   = (incrA > 0 && nxtA > amax) ? [amin, rcur + stepR] :
+								       (incrA < 0 && nxtA < amin) ? [amax, rcur + stepR] : [nxtA, rcur];
+
+							if (AR[1] > rmax || AR[1] < rmin)
+								return null;
+
+							acur = AR[0];
+
+							if (AR[1] != rcur) {
+								rcur = AR[1];
+								incrA = getIncrA(rcur);
+							}
+
+							// maybe these should be polar rounded, not XY rounded?
+							return [
+								Math.round(cx + AR[1] * Math.cos(AR[0])),
+								Math.round(cy + AR[1] * Math.sin(AR[0])),
+							];
+						};
+						break;
+					case 1:
+						incrA = getIncrA(rmax);
+						var nextXY = function nextXY() {
+							var nxtR = rcur + stepR,
+								AR   = (stepR > 0 && nxtR > rmax) ? [acur + incrA, rmin] :
+								       (stepR < 0 && nxtR < rmin) ? [acur + incrA, rmax] : [acur, nxtR];
+
+							if (AR[0] > amax || AR[0] < amin)
+								return null;
+
+							acur = AR[0];
+							rcur = AR[1];
+
+							return [
+								Math.round(cx + AR[1] * Math.cos(AR[0])),
+								Math.round(cy + AR[1] * Math.sin(AR[0])),
+							];
+						};
+						break;
+				}
+
+				return this.scan.call(this, nextXY, fn);
+			},
+
+			scanAR: function scanAR(fn, stepA, stepR, bbox, aType) {
+				var args = Array.prototype.slice.call(arguments);
+				args.unshift(0);
+				return this.scanPolar.apply(this, args);
+			},
+
+			scanRA: function scanRA(fn, stepA, stepR, bbox, aType) {
+				var args = Array.prototype.slice.call(arguments);
+				args.unshift(1);
+				return this.scanPolar.apply(this, args);
 			},
 		},
 
