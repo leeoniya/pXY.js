@@ -609,6 +609,13 @@ function pXY(ctx, bbox) {
 				this.moveTo(pos.x, pos.y, true, !pub);
 				return this;
 			},
+
+			// restores last saved position, but keeps it on stack
+			ret: function ret(pub) {
+				var pos = this.hist[this.hist.length - 1];
+				this.moveTo(pos.x, pos.y, true, !pub);
+				return this;
+			},
 		},
 
 		state: {
