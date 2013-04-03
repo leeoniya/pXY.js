@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012, Leon Sorokin
+* Copyright (c) 2013, Leon Sorokin
 * All rights reserved. (MIT Licensed)
 *
 * pXY.js - pixel analysis for HTML5 Canvas
