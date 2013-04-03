@@ -705,7 +705,7 @@ function pXY(ctx, bbox) {
 				// secondary axis advancing functions
 				switch(ori) {
 					case 0:
-						var nextXY = function nextXY() {
+						var next = function nextXY() {
 							var nxtX = this.x + stepX;
 							if (stepX > 0 && nxtX > _rgt)
 								return [_lft, this.y + stepY];
@@ -715,7 +715,7 @@ function pXY(ctx, bbox) {
 						};
 						break;
 					case 1:
-						var nextXY = function nextXY() {
+						var next = function nextXY() {
 							var nxtY = this.y + stepY;
 							if (stepY > 0 && nxtY > _btm)
 								return [this.x + stepX, _top];
@@ -725,7 +725,7 @@ function pXY(ctx, bbox) {
 						};
 						break;
 				}
-				return this.scan.call(this, nextXY, fn);
+				return this.scan.call(this, next, fn);
 			},
 
 			scanXY: function scanXY(fn, stepX, stepY) {
@@ -747,8 +747,7 @@ function pXY(ctx, bbox) {
 				var rmin = bbox.rmin || 1,
 					rmax = bbox.rmax || Math.min(this.h/2, this.w/2),
 					amin = bbox.amin || 0,
-					amax = bbox.amax || 2*Math.PI,
-					degs = degs || false;
+					amax = bbox.amax || 2*Math.PI;
 
 				stepA = stepA || 1;
 				aType = aType || 1;
@@ -759,7 +758,7 @@ function pXY(ctx, bbox) {
 					rcur = stepR > 0 ? rmin : rmax,
 					acur = stepA > 0 ? amin : amax;
 
-				incrA = getIncrA(rcur);						// angle increment (radians)
+				var incrA = getIncrA(rcur);						// angle increment (radians)
 
 				function getIncrA(radius) {
 					switch (aType) {
@@ -772,7 +771,7 @@ function pXY(ctx, bbox) {
 				// TODO: DRY
 				switch(ori) {
 					case 0:
-						var nextXY = function nextXY() {
+						var next = function nextXY() {
 							var nxtA = acur + incrA,
 								AR   = (incrA > 0 && nxtA > amax) ? [amin, rcur + stepR] :
 								       (incrA < 0 && nxtA < amin) ? [amax, rcur + stepR] : [nxtA, rcur];
@@ -796,7 +795,7 @@ function pXY(ctx, bbox) {
 						break;
 					case 1:
 						incrA = getIncrA(rmax);
-						var nextXY = function nextXY() {
+						var next = function nextXY() {
 							var nxtR = rcur + stepR,
 								AR   = (stepR > 0 && nxtR > rmax) ? [acur + incrA, rmin] :
 								       (stepR < 0 && nxtR < rmin) ? [acur + incrA, rmax] : [acur, nxtR];
@@ -815,7 +814,7 @@ function pXY(ctx, bbox) {
 						break;
 				}
 
-				return this.scan.call(this, nextXY, fn);
+				return this.scan.call(this, next, fn);
 			},
 
 			scanAR: function scanAR(fn, stepA, stepR, bbox, aType) {
