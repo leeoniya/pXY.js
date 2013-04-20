@@ -843,7 +843,9 @@ function pXY(ctx, bbox) {
 				var nulls = 0;
 				var next = function nextXY() {
 					do {
-						if (pos == end)
+						if (nulls == last.length)
+							return null;
+						else if (pos == end)
 							pos = 0;
 						else
 							pos++;
@@ -854,8 +856,7 @@ function pXY(ctx, bbox) {
 
 							if (nX < 0 || nX > this.w - 1 || nY < 0 || nY > this.h - 1) {
 								last[pos] = null;
-								if (++nulls == dirs.length)
-									return null;
+								nulls++;
 							}
 							else {
 								last[pos] = [nX, nY];
@@ -865,7 +866,17 @@ function pXY(ctx, bbox) {
 					} while (!last[pos]);
 				};
 
-				return this.scan.call(this, next, fn || null);
+				// wrapper that only halts a single scan dir
+				// on a false return from callback
+				var fn0 = fn ? function(steps) {
+					if (fn.call(this, steps) === false) {
+						last[pos] = null;
+						if (++nulls == last.length)
+							return false;
+					}
+				} : null;
+
+				return this.scan.call(this, next, fn0);
 			},
 		},
 
