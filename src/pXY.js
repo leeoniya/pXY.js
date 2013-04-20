@@ -828,6 +828,45 @@ function pXY(ctx, bbox) {
 				args.unshift(1);
 				return this.scanPolar.apply(this, args);
 			},
+
+			// alternating/cycling scan
+			// @dirs: array of multiple [x,y] pairs
+			scanAlt: function scanAlt(dirs, fn) {
+				var pos = -1,
+					end = dirs.length - 1,
+					last = [];
+
+				// initialize starting coords
+				for (var i in dirs)
+					last[i] = [this.x, this.y];
+
+				var nulls = 0;
+				var next = function nextXY() {
+					do {
+						if (pos == end)
+							pos = 0;
+						else
+							pos++;
+
+						if (last[pos]) {
+							var nX = last[pos][0] + dirs[pos][0],
+								nY = last[pos][1] + dirs[pos][1];
+
+							if (nX < 0 || nX > this.w - 1 || nY < 0 || nY > this.h - 1) {
+								last[pos] = null;
+								if (++nulls == dirs.length)
+									return null;
+							}
+							else {
+								last[pos] = [nX, nY];
+								return last[pos];
+							}
+						}
+					} while (!last[pos]);
+				};
+
+				return this.scan.call(this, next, fn || null);
+			},
 		},
 
 		// sectioning helpers
