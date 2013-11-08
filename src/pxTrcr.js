@@ -19,6 +19,10 @@ function pxTrcr(w, h, ctnr) {
 	this.buf = [];
 	this.rid = null;	// id returned by reqAnimFrame
 
+	// affected area [lft, top, rgt, btm]
+	this._trk = false;
+	this.area = [];
+
 	if (!this.ctnr)
 		this.rec();
 
@@ -229,7 +233,8 @@ function pxTrcr(w, h, ctnr) {
 				return this;
 			},
 			// @rate: ops/sec to dequeue from buffer
-			draw: function draw(rate) {
+			// $onFrame: callback accepting the layer stack at each frame (for encoding / recording)
+			draw: function draw(rate, onFrame, onDone) {
 				var recOld = this._rec;
 				this._rec = false;
 
@@ -273,8 +278,14 @@ function pxTrcr(w, h, ctnr) {
 								}
 							}
 
-							if (frOps)
+							if (frOps) {
 								self.upd();
+
+								onFrame && onFrame.call(self);
+							}
+
+							if (onDone && self.buf.length == 0)
+								onDone.call(self);
 						};
 
 						self.rid = requestAnimationFrame(step);
@@ -348,13 +359,47 @@ function pxTrcr(w, h, ctnr) {
 				}
 
 				// set pixel for moves
-				if (fnIdx === EV_MOVE)
+				if (fnIdx == EV_MOVE) {
 					this.setPx(args[2]);
+
+					if (this._trk) {
+						var a = this.area;
+
+						if (args[0] < a[0]) a[0] = args[0];	// lft
+						if (args[1] < a[1]) a[1] = args[1];	// top
+						if (args[0] > a[2]) a[2] = args[0];	// rgt
+						if (args[1] > a[3]) a[3] = args[1];	// btm
+					}
+				}
 
 				if (!this.cfgs[0][0].chk(fnIdx, args[3]))
 					this.pop();
 
 				return this;
+			}
+		},
+		utils: {
+			// track affected area of move/setPx
+			trk: function trk() {
+				return this.trkOn();
+			},
+			trkOn: function trkOn() {
+				this._trk = true;
+				this.trkReset();
+				return this;
+			},
+			trkOff: function trkOff() {
+				this._trk = false;
+				this.trkReset();
+				return this;
+			},
+			trkFlush: function() {
+				var area = this.area.slice(0);
+				this.trkReset();
+				return area;
+			},
+			trkReset: function() {
+				this.area = [this.w-1,this.h-1,0,0];
 			}
 		}
 	};
