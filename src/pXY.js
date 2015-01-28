@@ -744,7 +744,7 @@ function pXY(ctx, bbox) {
 			scanPolar: function scanPolar(ori, fn, stepA, stepR, bbox, aType) {
 				bbox = bbox || {};
 
-				var rmin = bbox.rmin || 1,
+				var rmin = bbox.rmin || 0,
 					rmax = bbox.rmax || Math.min(this.h/2, this.w/2),
 					amin = bbox.amin || 0,
 					amax = bbox.amax || 2*Math.PI;
